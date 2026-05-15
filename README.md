@@ -16,3 +16,43 @@
 ```bash
 pip install pefile
 sudo apt install mingw-w64
+```
+
+## 使用方法
+
+```bash
+./packer.sh input.exe output.exe
+```
+
+将生成的 `output.exe` 在 Windows 上运行即可。
+
+## 工作原理
+
+```
+input.exe
+    │
+    ├─ ① 解析 PE 结构，定位 .text 节区
+    ├─ ② 生成随机密钥，LCG XOR 加密 .text
+    ├─ ③ 编译 stub.c，注入为 .crypt 新节区
+    ├─ ④ 入口点重定向到 stub
+    └─ output.exe
+
+运行时:
+    .crypt(stub) → 反调试检测 → 解密 .text → 跳转 OEP
+```
+
+## 文件结构
+
+```
+packer.sh      — 一键封装脚本
+packer.py      — 核心混淆引擎 (PE 解析 + 加密 + 注入)
+stub.c         — 运行时解密加载器 (MinGW 编译注入到 PE)
+test_app.c     — 验证用测试程序
+USAGE.md       — 简洁使用参考
+```
+
+## 注意事项
+
+- 仅支持 **64 位 Windows PE** (x86-64)
+- 被混淆的程序不能已有其他加密壳
+- 某些杀软可能对注入行为敏感，建议签名后再分发
